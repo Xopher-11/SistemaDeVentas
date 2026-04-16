@@ -1,0 +1,74 @@
+﻿using Microsoft.Extensions.Options;
+using SistemaDeVentas.Application.Interfaces;
+using SistemaDeVentas.Application.Models;
+using SistemaDeVentas.Infrastructure.Settings;
+using System.Diagnostics;
+
+namespace SistemaDeVentas.Infrastructure.Extractors
+{
+    public class DatabaseDataExtractor : ISalesDataExtractor
+    {
+        private readonly IDataWarehouseReader<Dictionary<string, object?>> _databaseReader;
+        private readonly IStagingAreaService _stagingService;
+        private readonly IProcessLogger _logger;
+        private readonly DatabaseSettings _databaseSettings;
+
+        public string DataSourceName => "Relational Database";
+
+        public DatabaseDataExtractor(
+            IDataWarehouseReader<Dictionary<string, object?>> databaseReader,
+            IStagingAreaService stagingService,
+            IProcessLogger logger,
+            IOptions<DatabaseSettings> databaseOptions)
+        {
+            _databaseReader = databaseReader;
+            _stagingService = stagingService;
+            _logger = logger;
+            _databaseSettings = databaseOptions.Value;
+        }
+
+        public async Task<DataExtractionResult> ExtractDataAsync(CancellationToken cancellationToken = default)
+        {
+            var startTime = DateTime.Now;
+            var timer = Stopwatch.StartNew();
+
+            try
+            {
+                _logger.LogInfo("Starting database extraction...");
+
+                var rows = await _databaseReader.GetFromQueryAsync(_databaseSettings.ExtractionSql, cancellationToken);
+                var staging = await _stagingService.SaveToStagingAsync(rows, "database_extraction.json", cancellationToken);
+
+                timer.Stop();
+
+                return new DataExtractionResult
+                {
+                    Source = DataSourceName,
+                    Success = true,
+                    ExtractedCount = rows.Count,
+                    Description = "Database extraction completed successfully.",
+                    StagingPath = staging.Path,
+                    StartTime = startTime,
+                    FinishTime = DateTime.Now,
+                    DurationMs = timer.ElapsedMilliseconds
+                };
+            }
+            catch (Exception ex)
+            {
+                timer.Stop();
+                _logger.LogFailure("Database extraction failed.", ex);
+
+                return new DataExtractionResult
+                {
+                    Source = DataSourceName,
+                    Success = false,
+                    ExtractedCount = 0,
+                    Description = ex.Message,
+                    StartTime = startTime,
+                    FinishTime = DateTime.Now,
+                    DurationMs = timer.ElapsedMilliseconds
+                };
+            }
+        }
+    }
+}

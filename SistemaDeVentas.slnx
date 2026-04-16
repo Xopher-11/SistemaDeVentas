@@ -1,0 +1,15 @@
+<Solution>
+  <Folder Name="/API/">
+    <Project Path="SistemaDeVentas.API/SistemaDeVentas.API.csproj" />
+  </Folder>
+  <Folder Name="/Core/">
+    <Project Path="SistemaDeVentas.Application/SistemaDeVentas.Application.csproj" />
+  </Folder>
+  <Folder Name="/Infrastructure/">
+    <Project Path="SistemaDeVentas.Infrastructure/SistemaDeVentas.Infrastructure.csproj" />
+    <Project Path="SistemaDeVentas.Persistence/SistemaDeVentas.Persistence.csproj" />
+  </Folder>
+  <Folder Name="/Process/">
+    <Project Path="SistemaDeVentas.Worker/SistemaDeVentas.Worker.csproj" />
+  </Folder>
+</Solution>
