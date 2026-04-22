@@ -5,6 +5,6 @@ namespace SistemaDeVentas.Application.Interfaces
     public interface ISalesDataExtractor
     {
         string DataSourceName { get; }
-        Task<DataExtractionResult> ExtractDataAsync(CancellationToken cancellationToken = default);
+        Task<SourceExtractionInfo> ExtractDataAsync(CancellationToken cancellationToken = default);
     }
 }

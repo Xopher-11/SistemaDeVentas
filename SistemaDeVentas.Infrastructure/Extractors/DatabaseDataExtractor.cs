@@ -27,7 +27,7 @@ namespace SistemaDeVentas.Infrastructure.Extractors
             _databaseSettings = databaseOptions.Value;
         }
 
-        public async Task<DataExtractionResult> ExtractDataAsync(CancellationToken cancellationToken = default)
+        public async Task<SourceExtractionInfo> ExtractDataAsync(CancellationToken cancellationToken = default)
         {
             var startTime = DateTime.Now;
             var timer = Stopwatch.StartNew();
@@ -41,16 +41,16 @@ namespace SistemaDeVentas.Infrastructure.Extractors
 
                 timer.Stop();
 
-                return new DataExtractionResult
+                return new SourceExtractionInfo
                 {
-                    Source = DataSourceName,
-                    Success = true,
-                    ExtractedCount = rows.Count,
-                    Description = "Database extraction completed successfully.",
-                    StagingPath = staging.Path,
-                    StartTime = startTime,
-                    FinishTime = DateTime.Now,
-                    DurationMs = timer.ElapsedMilliseconds
+                    SourceName = DataSourceName,
+                    WasSuccessful = true,
+                    RecordsExtracted = rows.Count,
+                    Message = "Database extraction completed successfully.",
+                    StagingFilePath = staging.FilePath,
+                    StartedAt = startTime,
+                    EndedAt = DateTime.Now,
+                    DurationInMilliseconds = timer.ElapsedMilliseconds
                 };
             }
             catch (Exception ex)
@@ -58,15 +58,15 @@ namespace SistemaDeVentas.Infrastructure.Extractors
                 timer.Stop();
                 _logger.LogFailure("Database extraction failed.", ex);
 
-                return new DataExtractionResult
+                return new SourceExtractionInfo
                 {
-                    Source = DataSourceName,
-                    Success = false,
-                    ExtractedCount = 0,
-                    Description = ex.Message,
-                    StartTime = startTime,
-                    FinishTime = DateTime.Now,
-                    DurationMs = timer.ElapsedMilliseconds
+                    SourceName = DataSourceName,
+                    WasSuccessful = false,
+                    RecordsExtracted = 0,
+                    Message = ex.Message,
+                    StartedAt = startTime,
+                    EndedAt = DateTime.Now,
+                    DurationInMilliseconds = timer.ElapsedMilliseconds
                 };
             }
         }

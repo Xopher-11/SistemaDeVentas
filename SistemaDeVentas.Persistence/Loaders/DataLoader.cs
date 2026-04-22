@@ -1,7 +1,7 @@
 ﻿using SistemaDeVentas.Persistence.Context;
 using SistemaDeVentas.Application.Interfaces;
 
-namespace SistemaDeVentas.Persistence.Entities.Loaders
+namespace SistemaDeVentas.Persistence.Loaders
 {
     public class DataLoader : IDataWarehouseLoader
     {

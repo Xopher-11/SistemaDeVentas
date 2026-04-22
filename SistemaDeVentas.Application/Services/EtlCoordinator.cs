@@ -15,11 +15,11 @@ namespace SistemaDeVentas.Application.Services
             _logger = logger;
         }
 
-        public async Task<EtlProcessSummary> ExecuteAsync(CancellationToken cancellationToken = default)
+        public async Task<PipelineRunStats> ExecuteAsync(CancellationToken cancellationToken = default)
         {
-            var summary = new EtlProcessSummary
+            var summary = new PipelineRunStats
             {
-                StartTime = DateTime.Now
+                StartedAt = DateTime.Now
             };
 
             var timer = Stopwatch.StartNew();
@@ -34,9 +34,9 @@ namespace SistemaDeVentas.Application.Services
 
                     var extractionResult = await extractor.ExtractDataAsync(cancellationToken);
 
-                    summary.ExtractionDetails.Add(extractionResult);
-                    summary.SourcesProcessed++;
-                    summary.TotalRows += extractionResult.ExtractedCount;
+                    summary.Results.Add(extractionResult);
+                    summary.TotalSources++;
+                    summary.TotalRecords += extractionResult.RecordsExtracted;
 
                     _logger.LogInfo($"Source completed: {extractor.DataSourceName}");
                 }
@@ -45,25 +45,25 @@ namespace SistemaDeVentas.Application.Services
                     _logger.LogFailure($"Failure processing source: {extractor.DataSourceName}", ex);
 
                     // Guardamos el fallo para tener trazabilidad en el resumen
-                    summary.ExtractionDetails.Add(new DataExtractionResult
+                    summary.Results.Add(new SourceExtractionInfo
                     {
-                        Source = extractor.DataSourceName,
-                        Success = false,
-                        ExtractedCount = 0,
-                        Description = ex.Message,
-                        StartTime = DateTime.Now,
-                        FinishTime = DateTime.Now,
-                        DurationMs = 0
+                        SourceName = extractor.DataSourceName,
+                        WasSuccessful = false,
+                        RecordsExtracted = 0,
+                        Message = ex.Message,
+                        StartedAt = DateTime.Now,
+                        EndedAt = DateTime.Now,
+                        DurationInMilliseconds = 0
                     });
 
-                    summary.SourcesProcessed++;
+                    summary.TotalSources++;
                 }
             }
 
             timer.Stop();
 
-            summary.FinishTime = DateTime.Now;
-            summary.TotalTimeMs = timer.ElapsedMilliseconds;
+            summary.EndedAt = DateTime.Now;
+            summary.TotalDurationInMilliseconds = timer.ElapsedMilliseconds;
 
             _logger.LogInfo("ETL process finished.");
 

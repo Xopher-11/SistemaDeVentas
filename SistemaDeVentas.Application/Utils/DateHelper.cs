@@ -1,4 +1,4 @@
-﻿namespace Sistema_de_Ventas.Application.Utils
+﻿namespace SistemaDeVentas.Application.Utils
 {
     public static class DateHelper
     {

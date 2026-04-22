@@ -16,7 +16,7 @@ namespace SistemaDeVentas.Infrastructure.Services
         }
 
         // Guarda los datos extraídos en formato JSON dentro del área de staging
-        public async Task<StagingResult> SaveToStagingAsync<T>(
+        public async Task<TempFileOutput> SaveToStagingAsync<T>(
             T data,
             string baseFileName,
             CancellationToken cancellationToken = default)
@@ -52,12 +52,12 @@ namespace SistemaDeVentas.Infrastructure.Services
             }
 
             // Retorna resultado del proceso de staging
-            return new StagingResult
+            return new TempFileOutput
             {
-                Created = true,
-                Path = fullPath,
-                SavedRecords = totalRecords,
-                Details = "Data successfully stored in staging area."
+                WasCreated = true,
+                FilePath = fullPath,
+                RecordsSaved = totalRecords,
+                Message = "Data successfully stored in staging area."
             };
         }
     }

@@ -4,16 +4,17 @@ using SistemaDeVentas.Application.Interfaces;
 using SistemaDeVentas.Application.SourceModels.API;
 using SistemaDeVentas.Application.SourceModels.CSV;
 using SistemaDeVentas.Infrastructure.APIClients;
-using SistemaDeVentas.Infrastructure.Settings;
+using SistemaDeVentas.Infrastructure.Extractors;
 using SistemaDeVentas.Infrastructure.Readers;
 using SistemaDeVentas.Infrastructure.Services;
-using SistemaDeVentas.Infrastructure.Extractors;
+using SistemaDeVentas.Infrastructure.Settings;
+using SistemaDeVentas.Persistence.Loaders;
 
 namespace SistemaDeVentas.Infrastructure.DependencyInjection
 {
     public static class InfrastructureExtensions
     {
-        public static IServiceCollection AddInfraServices(this IServiceCollection services, IConfiguration configuration)
+        public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
         {
             // Se cargan las configuraciones desde el appsettings
             services.Configure<CSVSettings>(configuration.GetSection("CSVSettings"));
@@ -53,6 +54,12 @@ namespace SistemaDeVentas.Infrastructure.DependencyInjection
             services.AddScoped<ISalesDataExtractor, CsvDataExtractor>();
             services.AddScoped<ISalesDataExtractor, DatabaseDataExtractor>();
             services.AddScoped<ISalesDataExtractor, ApiDataExtractor>();
+
+            // servicios del proceso ETL
+            services.AddScoped<IProcessLogger, ConsoleProcessLogger>();
+            services.AddScoped<IDataWarehouseLoader, DataLoader>();
+            services.AddScoped<IFactTableCleaner, FactTableCleaner>();
+            services.AddScoped<IFactSalesLoader, FactSalesLoaderService>();
 
             return services;
         }
