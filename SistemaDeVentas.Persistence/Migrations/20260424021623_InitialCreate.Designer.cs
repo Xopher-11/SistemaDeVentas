@@ -12,7 +12,7 @@ using SistemaDeVentas.Persistence.Context;
 namespace SistemaDeVentas.Persistence.Migrations
 {
     [DbContext(typeof(SalesDataWarehouseContext))]
-    [Migration("20260422052546_InitialCreate")]
+    [Migration("20260424021623_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -91,10 +91,7 @@ namespace SistemaDeVentas.Persistence.Migrations
             modelBuilder.Entity("SistemaDeVentas.Persistence.Entities.DataWareHouse.Dimensions.DimDate", b =>
                 {
                     b.Property<int>("DateKey")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DateKey"));
 
                     b.Property<DateTime>("Date")
                         .HasColumnType("date");

@@ -33,7 +33,10 @@ namespace SistemaDeVentas.Infrastructure.Extractors
                 _logger.LogInfo("Starting API extraction...");
 
                 var items = await _apiService.GetDataAsync(cancellationToken);
-                var staging = await _stagingService.SaveToStagingAsync(items, "api_extraction.json", cancellationToken);
+                var staging = await _stagingService.SaveToStagingAsync(
+                    items,
+                    "api_extraction.json",
+                    cancellationToken);
 
                 timer.Stop();
 

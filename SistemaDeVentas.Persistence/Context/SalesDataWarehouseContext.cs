@@ -26,6 +26,9 @@ namespace SistemaDeVentas.Persistence.Context
                 entity.ToTable("DimDate");
                 entity.HasKey(e => e.DateKey);
 
+                entity.Property(e => e.DateKey)
+                      .ValueGeneratedNever();
+
                 entity.Property(e => e.Date).HasColumnType("date");
                 entity.Property(e => e.MonthName).HasMaxLength(15).IsRequired();
                 entity.Property(e => e.DayName).HasMaxLength(15).IsRequired();

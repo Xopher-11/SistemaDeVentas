@@ -164,8 +164,8 @@ namespace SistemaDeVentas.Infrastructure.Services
             _logger.LogInfo("Loading DimCategory...");
 
             var categoryList = products
-                .Where(p => !string.IsNullOrWhiteSpace(p.CategoryName))
-                .GroupBy(p => CleanText(p.CategoryName))
+                .Where(p => !string.IsNullOrWhiteSpace(p.Category))
+                .GroupBy(p => CleanText(p.Category))
                 .Select(g => new DimCategory
                 {
                     CategoryName = g.Key
@@ -190,11 +190,11 @@ namespace SistemaDeVentas.Infrastructure.Services
 
             var productList = products.Select(p => new DimProduct
             {
-                ProductID_NaturalKey = p.ProductId,
+                ProductID_NaturalKey = p.ProductID,
                 ProductName = CleanText(p.ProductName),
-                CategoryKey = categoryMap.TryGetValue(CleanText(p.CategoryName), out var catKey) ? catKey : null,
-                ListPrice = p.UnitPrice,
-                Stock = p.StockAvailable
+                CategoryKey = categoryMap.TryGetValue(CleanText(p.Category), out var catKey) ? catKey : null,
+                ListPrice = p.Price,
+                Stock = p.Stock
             }).ToList();
 
             await _dwContext.Products.AddRangeAsync(productList, cancellationToken);
@@ -210,11 +210,11 @@ namespace SistemaDeVentas.Infrastructure.Services
             _logger.LogInfo("Loading DimLocation...");
 
             var locationList = customers
-                .Where(c => !string.IsNullOrWhiteSpace(c.CountryName) && !string.IsNullOrWhiteSpace(c.CityName))
+                .Where(c => !string.IsNullOrWhiteSpace(c.Country) && !string.IsNullOrWhiteSpace(c.City))
                 .GroupBy(c => new
                 {
-                    Country = CleanText(c.CountryName),
-                    City = CleanText(c.CityName)
+                    Country = CleanText(c.Country),
+                    City = CleanText(c.City)
                 })
                 .Select(g => new DimLocation
                 {
@@ -244,13 +244,13 @@ namespace SistemaDeVentas.Infrastructure.Services
 
             var customerList = customers.Select(c => new DimCustomer
             {
-                CustomerID_NaturalKey = c.CustomerId,
-                FirstName = CleanText(c.Name),
+                CustomerID_NaturalKey = c.CustomerID,
+                FirstName = CleanText(c.FirstName),
                 LastName = CleanText(c.LastName),
-                Email = string.IsNullOrWhiteSpace(c.EmailAddress) ? null : c.EmailAddress.Trim(),
-                Phone = string.IsNullOrWhiteSpace(c.PhoneNumber) ? null : c.PhoneNumber.Trim(),
+                Email = string.IsNullOrWhiteSpace(c.Email) ? null : c.Email.Trim(),
+                Phone = string.IsNullOrWhiteSpace(c.Phone) ? null : c.Phone.Trim(),
                 LocationKey = locationMap.TryGetValue(
-                    MakeLocationKey(c.CountryName, c.CityName),
+                    MakeLocationKey(c.Country, c.City),
                     out var locKey) ? locKey : null
             }).ToList();
 
@@ -267,8 +267,8 @@ namespace SistemaDeVentas.Infrastructure.Services
             _logger.LogInfo("Loading DimOrderStatus...");
 
             var statusList = orders
-                .Where(o => !string.IsNullOrWhiteSpace(o.OrderStatus))
-                .GroupBy(o => CleanText(o.OrderStatus))
+                .Where(o => !string.IsNullOrWhiteSpace(o.Status))
+                .GroupBy(o => CleanText(o.Status))
                 .Select(g => new DimOrderStatus
                 {
                     StatusName = g.Key
@@ -288,7 +288,7 @@ namespace SistemaDeVentas.Infrastructure.Services
             _logger.LogInfo("Loading DimDate...");
 
             var dateList = orders
-                .Select(o => o.DateCreated.Date)
+                .Select(o => o.OrderDate.Date)
                 .Distinct()
                 .OrderBy(d => d)
                 .Select(date => new DimDate
@@ -321,8 +321,9 @@ namespace SistemaDeVentas.Infrastructure.Services
         {
             _logger.LogInfo("Loading FactSales...");
 
-            var orderMap = orders.ToDictionary(o => o.OrderId, o => o);
-            var customerCsvMap = customers.ToDictionary(c => c.CustomerId, c => c);
+            var orderMap = orders.ToDictionary(o => o.OrderID, o => o);
+            var customerCsvMap = customers.ToDictionary(c => c.CustomerID, c => c);
+            var productCsvMap = products.ToDictionary(p => p.ProductID, p => p);
 
             var customerKeyMap = await _dwContext.Customers
                 .AsNoTracking()
@@ -347,43 +348,60 @@ namespace SistemaDeVentas.Infrastructure.Services
 
             foreach (var detail in orderDetails)
             {
-                if (!orderMap.TryGetValue(detail.OrderId, out var order))
+                if (!orderMap.TryGetValue(detail.OrderID, out var order))
                 {
-                    _logger.LogWarning($"Order {detail.OrderId} not found, skipping detail.");
+                    _logger.LogWarning($"Order {detail.OrderID} not found, skipping detail.");
                     continue;
                 }
 
-                if (!customerKeyMap.TryGetValue(order.CustomerId, out var customerKey))
+                if (!customerKeyMap.TryGetValue(order.CustomerID, out var customerKey))
                 {
-                    _logger.LogWarning($"Customer {order.CustomerId} not found in DimCustomer.");
+                    _logger.LogWarning($"Customer {order.CustomerID} not found in DimCustomer.");
                     continue;
                 }
 
-                if (!productKeyMap.TryGetValue(detail.ProductId, out var productKey))
+                if (!productKeyMap.TryGetValue(detail.ProductID, out var productKey))
                 {
-                    _logger.LogWarning($"Product {detail.ProductId} not found in DimProduct.");
+                    _logger.LogWarning($"Product {detail.ProductID} not found in DimProduct.");
                     continue;
                 }
 
-                if (!statusKeyMap.TryGetValue(CleanText(order.OrderStatus), out var statusKey))
+                if (!statusKeyMap.TryGetValue(CleanText(order.Status), out var statusKey))
                 {
-                    _logger.LogWarning($"Status '{order.OrderStatus}' not found in DimOrderStatus.");
+                    _logger.LogWarning($"Status '{order.Status}' not found in DimOrderStatus.");
                     continue;
                 }
 
-                var dateKey = DateHelper.ConvertToDateKey(order.DateCreated);
+                var dateKey = DateHelper.ConvertToDateKey(order.OrderDate);
 
                 int? locationKey = null;
-                if (customerCsvMap.TryGetValue(order.CustomerId, out var csvCustomer))
+                if (customerCsvMap.TryGetValue(order.CustomerID, out var csvCustomer))
                 {
-                    var locKey = MakeLocationKey(csvCustomer.CountryName, csvCustomer.CityName);
+                    var locKey = MakeLocationKey(csvCustomer.Country, csvCustomer.City);
                     if (locationKeyMap.TryGetValue(locKey, out var foundLocKey))
                     {
                         locationKey = foundLocKey;
                     }
                 }
 
-                var salesAmount = detail.Quantity * detail.UnitPrice;
+                decimal effectiveUnitPrice = 0m;
+
+                if (detail.TotalPrice > 0 && detail.Quantity > 0)
+                {
+                    effectiveUnitPrice = detail.TotalPrice / detail.Quantity;
+                }
+                else if (detail.TotalPrice > 0)
+                {
+                    effectiveUnitPrice = detail.TotalPrice;
+                }
+                else if (productCsvMap.TryGetValue(detail.ProductID, out var csvProduct))
+                {
+                    effectiveUnitPrice = csvProduct.Price;
+                }
+
+                decimal effectiveSalesAmount = detail.TotalPrice > 0
+                    ? detail.TotalPrice
+                    : detail.Quantity * effectiveUnitPrice;
 
                 factList.Add(new FactSales
                 {
@@ -392,10 +410,10 @@ namespace SistemaDeVentas.Infrastructure.Services
                     ProductKey = productKey,
                     LocationKey = locationKey,
                     StatusKey = statusKey,
-                    OrderID = detail.OrderId,
+                    OrderID = detail.OrderID,
                     Quantity = detail.Quantity,
-                    UnitPrice = detail.UnitPrice,
-                    SalesAmount = salesAmount
+                    UnitPrice = effectiveUnitPrice,
+                    SalesAmount = effectiveSalesAmount
                 });
             }
 

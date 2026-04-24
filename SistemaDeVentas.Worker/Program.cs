@@ -18,7 +18,6 @@ namespace SistemaDeVentas.Worker
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DataWarehouseConnection")));
 
             var host = builder.Build();
-            Console.ReadKey();
             host.Run();
         }
     }

@@ -2,12 +2,12 @@
 {
     public class CustomerRecord
     {
-        public int CustomerId { get; set; }
-        public string Name { get; set; } = string.Empty;
+        public int CustomerID { get; set; }
+        public string FirstName { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;
-        public string? EmailAddress { get; set; }
-        public string? PhoneNumber { get; set; }
-        public string CityName { get; set; } = string.Empty;
-        public string CountryName { get; set; } = string.Empty;
+        public string? Email { get; set; }
+        public string? Phone { get; set; }
+        public string City { get; set; } = string.Empty;
+        public string Country { get; set; } = string.Empty;
     }
 }

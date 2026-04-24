@@ -88,10 +88,7 @@ namespace SistemaDeVentas.Persistence.Migrations
             modelBuilder.Entity("SistemaDeVentas.Persistence.Entities.DataWareHouse.Dimensions.DimDate", b =>
                 {
                     b.Property<int>("DateKey")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DateKey"));
 
                     b.Property<DateTime>("Date")
                         .HasColumnType("date");

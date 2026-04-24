@@ -51,20 +51,53 @@ namespace SistemaDeVentas.Infrastructure.Extractors
                 var ordersPath = Path.Combine(_csvSettings.BasePath, _csvSettings.OrdersFileName);
                 var orderDetailsPath = Path.Combine(_csvSettings.BasePath, _csvSettings.OrderDetailsFileName);
 
+                _logger.LogInfo($"Customers path: {customersPath}");
+                _logger.LogInfo($"Products path: {productsPath}");
+                _logger.LogInfo($"Orders path: {ordersPath}");
+                _logger.LogInfo($"OrderDetails path: {orderDetailsPath}");
+
+                if (!File.Exists(customersPath))
+                    throw new FileNotFoundException("Customers CSV not found.", customersPath);
+
+                if (!File.Exists(productsPath))
+                    throw new FileNotFoundException("Products CSV not found.", productsPath);
+
+                if (!File.Exists(ordersPath))
+                    throw new FileNotFoundException("Orders CSV not found.", ordersPath);
+
+                if (!File.Exists(orderDetailsPath))
+                    throw new FileNotFoundException("OrderDetails CSV not found.", orderDetailsPath);
+
                 var customers = await _customerReader.ReadFileAsync(customersPath, cancellationToken);
                 var products = await _productReader.ReadFileAsync(productsPath, cancellationToken);
                 var orders = await _orderReader.ReadFileAsync(ordersPath, cancellationToken);
                 var orderDetails = await _orderDetailReader.ReadFileAsync(orderDetailsPath, cancellationToken);
 
-                var extractedData = new
+                var productPriceMap = products.ToDictionary(p => p.ProductID, p => p.Price);
+
+                foreach (var detail in orderDetails)
                 {
-                    Customers = customers,
-                    Products = products,
-                    Orders = orders,
-                    OrderDetails = orderDetails
+                    if (detail.TotalPrice <= 0 &&
+                        productPriceMap.TryGetValue(detail.ProductID, out var fallbackPrice))
+                    {
+                        detail.TotalPrice = fallbackPrice * detail.Quantity;
+                    }
+                }
+
+                var extractedData = new CsvRawDataBundle
+                {
+                    CustomerList = customers,
+                    ProductList = products,
+                    OrderList = orders,
+                    OrderDetailList = orderDetails
                 };
 
-                var staging = await _stagingService.SaveToStagingAsync(extractedData, "csv_extraction.json", cancellationToken);
+                var staging = await _stagingService.SaveToStagingAsync(
+                    extractedData,
+                    "csv_extraction.json",
+                    cancellationToken);
+
+                _logger.LogInfo($"CSV staging file created: {staging.FilePath}");
 
                 timer.Stop();
 
@@ -92,7 +125,7 @@ namespace SistemaDeVentas.Infrastructure.Extractors
                     SourceName = DataSourceName,
                     WasSuccessful = false,
                     RecordsExtracted = 0,
-                    Message = ex.Message,
+                    Message = ex.ToString(),
                     StartedAt = startTime,
                     EndedAt = DateTime.Now,
                     DurationInMilliseconds = timer.ElapsedMilliseconds

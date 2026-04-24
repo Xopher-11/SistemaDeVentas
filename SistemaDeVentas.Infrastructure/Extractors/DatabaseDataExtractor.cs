@@ -36,8 +36,14 @@ namespace SistemaDeVentas.Infrastructure.Extractors
             {
                 _logger.LogInfo("Starting database extraction...");
 
-                var rows = await _databaseReader.GetFromQueryAsync(_databaseSettings.ExtractionSql, cancellationToken);
-                var staging = await _stagingService.SaveToStagingAsync(rows, "database_extraction.json", cancellationToken);
+                var rows = await _databaseReader.GetFromQueryAsync(
+                    _databaseSettings.ExtractionSql,
+                    cancellationToken);
+
+                var staging = await _stagingService.SaveToStagingAsync(
+                    rows,
+                    "dw_extraction.json",
+                    cancellationToken);
 
                 timer.Stop();
 

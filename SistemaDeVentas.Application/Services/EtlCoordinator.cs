@@ -44,7 +44,6 @@ namespace SistemaDeVentas.Application.Services
                 {
                     _logger.LogFailure($"Failure processing source: {extractor.DataSourceName}", ex);
 
-                    // Guardamos el fallo para tener trazabilidad en el resumen
                     summary.Results.Add(new SourceExtractionInfo
                     {
                         SourceName = extractor.DataSourceName,

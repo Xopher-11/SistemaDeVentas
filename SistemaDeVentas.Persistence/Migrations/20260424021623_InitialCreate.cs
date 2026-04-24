@@ -28,8 +28,7 @@ namespace SistemaDeVentas.Persistence.Migrations
                 name: "DimDate",
                 columns: table => new
                 {
-                    DateKey = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                    DateKey = table.Column<int>(type: "int", nullable: false),
                     Date = table.Column<DateTime>(type: "date", nullable: false),
                     Year = table.Column<short>(type: "smallint", nullable: false),
                     Quarter = table.Column<byte>(type: "tinyint", nullable: false),

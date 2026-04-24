@@ -47,7 +47,6 @@ namespace SistemaDeVentas.Infrastructure.DependencyInjection
             services.AddHttpClient<ISalesApiService<ShipmentTracking>, ShipmentTrackingService>();
 
             // Servicios generales del ETL
-            services.AddScoped<IProcessLogger, ProcessLogger>();
             services.AddScoped<IStagingAreaService, StagingFileService>();
 
             // Extractores (parte del proceso ETL hacia el DW)

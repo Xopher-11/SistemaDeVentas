@@ -1,4 +1,5 @@
 using SistemaDeVentas.Application.Interfaces;
+using SistemaDeVentas.Application.Services;
 
 namespace SistemaDeVentas.Worker
 {
@@ -18,47 +19,83 @@ namespace SistemaDeVentas.Worker
             _lifetime = lifetime;
         }
 
+
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _logger.LogInformation("Iniciando el proceso de carga...");
+            _logger.LogInformation("Iniciando proceso ETL completo...");
 
             try
             {
-                await LimpiarYcargarAsync(stoppingToken);
-                _logger.LogInformation("Proceso terminado correctamente.");
+                using var scope = _scopeFactory.CreateScope();
+
+                var etlCoordinator = scope.ServiceProvider.GetRequiredService<EtlCoordinator>();
+                var factSalesLoader = scope.ServiceProvider.GetRequiredService<IFactSalesLoader>();
+
+                var pipelineResult = await etlCoordinator.ExecuteAsync(stoppingToken);
+
+                foreach (var item in pipelineResult.Results)
+                {
+                    _logger.LogInformation(
+                        "Fuente: {source} | Exito: {ok} | Registros: {records} | Mensaje: {msg} | Archivo: {file}",
+                        item.SourceName,
+                        item.WasSuccessful,
+                        item.RecordsExtracted,
+                        item.Message,
+                        item.StagingFilePath ?? "sin archivo");
+                }
+
+                var csvResult = pipelineResult.Results
+                    .FirstOrDefault(r =>
+                        r.WasSuccessful &&
+                        !string.IsNullOrWhiteSpace(r.StagingFilePath) &&
+                        r.SourceName.Contains("CSV", StringComparison.OrdinalIgnoreCase));
+
+                var csvFailure = pipelineResult.Results
+                    .FirstOrDefault(r => r.SourceName.Contains("CSV", StringComparison.OrdinalIgnoreCase));
+
+                if (csvResult is null || string.IsNullOrWhiteSpace(csvResult.StagingFilePath))
+                {
+                    throw new InvalidOperationException(
+                        $"Falló la extracción CSV. Detalle: {csvFailure?.Message ?? "No se encontró el archivo de staging del extractor CSV."}");
+                }
+
+                var csvStagingFile = csvResult.StagingFilePath;
+
+                _logger.LogInformation("Archivo CSV de staging encontrado: {file}", csvStagingFile);
+
+                _logger.LogInformation("Procesando dimensiones...");
+                var dimensionsResult = await factSalesLoader.ProcessDimensionsAsync(csvStagingFile, stoppingToken);
+
+                if (!dimensionsResult.WasSuccessful)
+                {
+                    throw new InvalidOperationException(
+                        $"Error al cargar dimensiones: {dimensionsResult.Message}");
+                }
+
+                _logger.LogInformation("Procesando FactSales...");
+                var factResult = await factSalesLoader.LoadFactSalesAsync(csvStagingFile, stoppingToken);
+
+                if (!factResult.WasSuccessful)
+                {
+                    throw new InvalidOperationException(
+                        $"Error al cargar FactSales: {factResult.Message}");
+                }
+
+                _logger.LogInformation("Proceso ETL finalizado correctamente.");
+                _logger.LogInformation("La aplicación seguirá abierta hasta que la detengas manualmente.");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Ocurrió un error durante el proceso.");
+                _logger.LogError(ex, "Ocurrió un error durante el proceso ETL.");
             }
-            finally
+
+            try
             {
-                _lifetime.StopApplication();
+                await Task.Delay(Timeout.Infinite, stoppingToken);
             }
-        }
-
-        private async Task LimpiarYcargarAsync(CancellationToken stoppingToken)
-        {
-            // Creamos un scope para poder usar los servicios Scoped
-            using var scope = _scopeFactory.CreateScope();
-
-            var cleaner = scope.ServiceProvider.GetRequiredService<IFactTableCleaner>();
-            var factSalesLoader = scope.ServiceProvider.GetRequiredService<IFactSalesLoader>();
-
-            _logger.LogInformation("Limpiando datos anteriores...");
-            await cleaner.LimpiarFactSalesAsync(stoppingToken);
-
-            _logger.LogInformation("Cargando registros de FactSales...");
-            var result = await factSalesLoader.LoadFactSalesAsync(
-                @"C:\Users\chris\Downloads\SistemaDeVentas\Staging", stoppingToken);
-
-            if (result.WasSuccessful)
+            catch (OperationCanceledException)
             {
-                _logger.LogInformation("Registros cargados: {total}", result.TotalFactSales);
-            }
-            else
-            {
-                _logger.LogWarning("Hubo un problema en la carga: {msg}", result.Message);
+                _logger.LogInformation("Aplicación detenida manualmente.");
             }
         }
     }
