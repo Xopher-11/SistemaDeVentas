@@ -24,13 +24,13 @@ namespace SistemaDeVentas.Application.Services
 
             var timer = Stopwatch.StartNew();
 
-            _logger.LogInfo("ETL process started...");
+            _logger.LogInfo("El proceso ETL ha comenzado...");
 
             foreach (var extractor in _dataExtractors)
             {
                 try
                 {
-                    _logger.LogInfo($"Processing source: {extractor.DataSourceName}");
+                    _logger.LogInfo($"Fuente de procesamiento: {extractor.DataSourceName}");
 
                     var extractionResult = await extractor.ExtractDataAsync(cancellationToken);
 
@@ -38,11 +38,11 @@ namespace SistemaDeVentas.Application.Services
                     summary.TotalSources++;
                     summary.TotalRecords += extractionResult.RecordsExtracted;
 
-                    _logger.LogInfo($"Source completed: {extractor.DataSourceName}");
+                    _logger.LogInfo($"Fuente completada: {extractor.DataSourceName}");
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogFailure($"Failure processing source: {extractor.DataSourceName}", ex);
+                    _logger.LogFailure($"Fuente de procesamiento de fallas: {extractor.DataSourceName}", ex);
 
                     summary.Results.Add(new SourceExtractionInfo
                     {
@@ -64,7 +64,7 @@ namespace SistemaDeVentas.Application.Services
             summary.EndedAt = DateTime.Now;
             summary.TotalDurationInMilliseconds = timer.ElapsedMilliseconds;
 
-            _logger.LogInfo("ETL process finished.");
+            _logger.LogInfo("Proceso ETL finalizado.");
 
             return summary;
         }

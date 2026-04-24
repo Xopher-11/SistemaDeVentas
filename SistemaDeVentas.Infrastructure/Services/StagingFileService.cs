@@ -57,7 +57,7 @@ namespace SistemaDeVentas.Infrastructure.Services
                 WasCreated = true,
                 FilePath = fullPath,
                 RecordsSaved = totalRecords,
-                Message = "Data successfully stored in staging area."
+                Message = "Datos almacenados correctamente en el área de preparación."
             };
         }
     }

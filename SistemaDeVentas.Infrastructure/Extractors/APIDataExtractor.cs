@@ -30,7 +30,7 @@ namespace SistemaDeVentas.Infrastructure.Extractors
 
             try
             {
-                _logger.LogInfo("Starting API extraction...");
+                _logger.LogInfo("Iniciando extracción de API...");
 
                 var items = await _apiService.GetDataAsync(cancellationToken);
                 var staging = await _stagingService.SaveToStagingAsync(
@@ -45,7 +45,7 @@ namespace SistemaDeVentas.Infrastructure.Extractors
                     SourceName = DataSourceName,
                     WasSuccessful = true,
                     RecordsExtracted = items.Count,
-                    Message = "API extraction completed successfully.",
+                    Message = "La extracción de la API se completó con éxito.",
                     StagingFilePath = staging.FilePath,
                     StartedAt = startTime,
                     EndedAt = DateTime.Now,
@@ -55,7 +55,7 @@ namespace SistemaDeVentas.Infrastructure.Extractors
             catch (Exception ex)
             {
                 timer.Stop();
-                _logger.LogFailure("API extraction failed.", ex);
+                _logger.LogFailure("La extracción de API falló.", ex);
 
                 return new SourceExtractionInfo
                 {

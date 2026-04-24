@@ -34,7 +34,7 @@ namespace SistemaDeVentas.Infrastructure.Extractors
 
             try
             {
-                _logger.LogInfo("Starting database extraction...");
+                _logger.LogInfo("Iniciando extracción de base de datos...");
 
                 var rows = await _databaseReader.GetFromQueryAsync(
                     _databaseSettings.ExtractionSql,
@@ -52,7 +52,7 @@ namespace SistemaDeVentas.Infrastructure.Extractors
                     SourceName = DataSourceName,
                     WasSuccessful = true,
                     RecordsExtracted = rows.Count,
-                    Message = "Database extraction completed successfully.",
+                    Message = "La extracción de la base de datos se completó con éxito.",
                     StagingFilePath = staging.FilePath,
                     StartedAt = startTime,
                     EndedAt = DateTime.Now,
@@ -62,7 +62,7 @@ namespace SistemaDeVentas.Infrastructure.Extractors
             catch (Exception ex)
             {
                 timer.Stop();
-                _logger.LogFailure("Database extraction failed.", ex);
+                _logger.LogFailure("Error en la extracción de la base de datos.", ex);
 
                 return new SourceExtractionInfo
                 {

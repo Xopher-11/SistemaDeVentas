@@ -27,12 +27,12 @@ namespace SistemaDeVentas.Infrastructure.Services
         {
             var result = new WarehouseLoadSummary
             {
-                ProcessName = "Process Dimensions"
+                ProcessName = "Dimensiones del proceso"
             };
 
             try
             {
-                _logger.LogInfo("Starting dimension processing...");
+                _logger.LogInfo("Iniciando procesamiento de dimensiones...");
 
                 var stagingData = await LoadStagingFileAsync(stagingFilePath, cancellationToken);
 
@@ -52,16 +52,16 @@ namespace SistemaDeVentas.Infrastructure.Services
                 await transaction.CommitAsync(cancellationToken);
 
                 result.WasSuccessful = true;
-                result.Message = "Dimensions processed and loaded successfully.";
+                result.Message = "Dimensiones procesadas y cargadas correctamente.";
 
-                _logger.LogInfo("Dimension processing completed.");
+                _logger.LogInfo("Procesamiento de dimensiones completado.");
             }
             catch (Exception ex)
             {
                 result.WasSuccessful = false;
                 result.Message = ex.Message;
 
-                _logger.LogFailure("Error while processing dimensions.", ex);
+                _logger.LogFailure("Error al procesar las dimensiones.", ex);
             }
 
             return result;
@@ -73,12 +73,12 @@ namespace SistemaDeVentas.Infrastructure.Services
         {
             var result = new WarehouseLoadSummary
             {
-                ProcessName = "Process FactSales"
+                ProcessName = "FactSales"
             };
 
             try
             {
-                _logger.LogInfo("Starting FactSales processing...");
+                _logger.LogInfo("Iniciando procesamiento de FactSales...");
 
                 var stagingData = await LoadStagingFileAsync(stagingFilePath, cancellationToken);
 
@@ -96,16 +96,16 @@ namespace SistemaDeVentas.Infrastructure.Services
                 await transaction.CommitAsync(cancellationToken);
 
                 result.WasSuccessful = true;
-                result.Message = "FactSales processed and loaded successfully.";
+                result.Message = "FactSales procesadas y cargadas correctamente.";
 
-                _logger.LogInfo("FactSales processing completed.");
+                _logger.LogInfo("Procesamiento de FactSales completado.");
             }
             catch (Exception ex)
             {
                 result.WasSuccessful = false;
                 result.Message = ex.Message;
 
-                _logger.LogFailure("Error while processing FactSales.", ex);
+                _logger.LogFailure("Error al procesar FactSales.", ex);
             }
 
             return result;
@@ -117,7 +117,7 @@ namespace SistemaDeVentas.Infrastructure.Services
         {
             if (string.IsNullOrWhiteSpace(stagingFilePath) || !File.Exists(stagingFilePath))
             {
-                throw new FileNotFoundException("Staging file was not found.", stagingFilePath);
+                throw new FileNotFoundException("No se encontró el archivo de preparación.", stagingFilePath);
             }
 
             var jsonContent = await File.ReadAllTextAsync(stagingFilePath, cancellationToken);
@@ -134,18 +134,18 @@ namespace SistemaDeVentas.Infrastructure.Services
         // Elimina los registros de FactSales antes de recargar
         private async Task DeleteFactSalesAsync(CancellationToken cancellationToken)
         {
-            _logger.LogInfo("Deleting FactSales records...");
+            _logger.LogInfo("Eliminando registros de FactSales...");
 
             await _dwContext.Database.ExecuteSqlRawAsync("DELETE FROM FactSales", cancellationToken);
 
-            _logger.LogInfo("FactSales cleared.");
+            _logger.LogInfo("FactSales eliminadas.");
         }
 
 
         // Elimina todas las dimensiones antes de recargar
         private async Task DeleteDimensionsAsync(CancellationToken cancellationToken)
         {
-            _logger.LogInfo("Deleting dimension tables...");
+            _logger.LogInfo("Eliminando tablas de dimensiones...");
 
             await _dwContext.Database.ExecuteSqlRawAsync("DELETE FROM DimCustomer", cancellationToken);
             await _dwContext.Database.ExecuteSqlRawAsync("DELETE FROM DimProduct", cancellationToken);
@@ -154,14 +154,14 @@ namespace SistemaDeVentas.Infrastructure.Services
             await _dwContext.Database.ExecuteSqlRawAsync("DELETE FROM DimLocation", cancellationToken);
             await _dwContext.Database.ExecuteSqlRawAsync("DELETE FROM DimCategory", cancellationToken);
 
-            _logger.LogInfo("Dimension tables cleared.");
+            _logger.LogInfo("Tablas de dimensiones borradas.");
         }
 
 
         // Carga las categorías únicas de los productos
         private async Task<int> LoadCategoriesAsync(List<ProductRecord> products, CancellationToken cancellationToken)
         {
-            _logger.LogInfo("Loading DimCategory...");
+            _logger.LogInfo("Cargando DimCategory...");
 
             var categoryList = products
                 .Where(p => !string.IsNullOrWhiteSpace(p.Category))
@@ -182,7 +182,7 @@ namespace SistemaDeVentas.Infrastructure.Services
         // Carga los productos y los vincula a su categoría
         private async Task<int> LoadProductsAsync(List<ProductRecord> products, CancellationToken cancellationToken)
         {
-            _logger.LogInfo("Loading DimProduct...");
+            _logger.LogInfo("Cargando DimProduct...");
 
             var categoryMap = await _dwContext.Categories
                 .AsNoTracking()
@@ -207,7 +207,7 @@ namespace SistemaDeVentas.Infrastructure.Services
         // Carga las ubicaciones únicas basadas en los clientes
         private async Task<int> LoadLocationsAsync(List<CustomerRecord> customers, CancellationToken cancellationToken)
         {
-            _logger.LogInfo("Loading DimLocation...");
+            _logger.LogInfo("Cargando DimLocation...");
 
             var locationList = customers
                 .Where(c => !string.IsNullOrWhiteSpace(c.Country) && !string.IsNullOrWhiteSpace(c.City))
@@ -233,7 +233,7 @@ namespace SistemaDeVentas.Infrastructure.Services
         // Carga los clientes y los vincula a su ubicación
         private async Task<int> LoadCustomersAsync(List<CustomerRecord> customers, CancellationToken cancellationToken)
         {
-            _logger.LogInfo("Loading DimCustomer...");
+            _logger.LogInfo("Cargando DimCustomer...");
 
             var locationMap = await _dwContext.Locations
                 .AsNoTracking()
@@ -264,7 +264,7 @@ namespace SistemaDeVentas.Infrastructure.Services
         // Carga los estados únicos de las órdenes
         private async Task<int> LoadOrderStatusesAsync(List<OrderRecord> orders, CancellationToken cancellationToken)
         {
-            _logger.LogInfo("Loading DimOrderStatus...");
+            _logger.LogInfo("Cargando DimOrderStatus...");
 
             var statusList = orders
                 .Where(o => !string.IsNullOrWhiteSpace(o.Status))
@@ -285,7 +285,7 @@ namespace SistemaDeVentas.Infrastructure.Services
         // Carga las fechas únicas de las órdenes
         private async Task<int> LoadDatesAsync(List<OrderRecord> orders, CancellationToken cancellationToken)
         {
-            _logger.LogInfo("Loading DimDate...");
+            _logger.LogInfo("Cargando DimDate...");
 
             var dateList = orders
                 .Select(o => o.OrderDate.Date)
@@ -319,7 +319,7 @@ namespace SistemaDeVentas.Infrastructure.Services
             List<OrderDetailRecord> orderDetails,
             CancellationToken cancellationToken)
         {
-            _logger.LogInfo("Loading FactSales...");
+            _logger.LogInfo("Cargando FactSales...");
 
             var orderMap = orders.ToDictionary(o => o.OrderID, o => o);
             var customerCsvMap = customers.ToDictionary(c => c.CustomerID, c => c);
@@ -350,25 +350,25 @@ namespace SistemaDeVentas.Infrastructure.Services
             {
                 if (!orderMap.TryGetValue(detail.OrderID, out var order))
                 {
-                    _logger.LogWarning($"Order {detail.OrderID} not found, skipping detail.");
+                    _logger.LogWarning($"Order {detail.OrderID} no encontrado, omitiendo detalles.");
                     continue;
                 }
 
                 if (!customerKeyMap.TryGetValue(order.CustomerID, out var customerKey))
                 {
-                    _logger.LogWarning($"Customer {order.CustomerID} not found in DimCustomer.");
+                    _logger.LogWarning($"Customer {order.CustomerID} no encontrado en DimCustomer.");
                     continue;
                 }
 
                 if (!productKeyMap.TryGetValue(detail.ProductID, out var productKey))
                 {
-                    _logger.LogWarning($"Product {detail.ProductID} not found in DimProduct.");
+                    _logger.LogWarning($"Product {detail.ProductID} no encontrado en DimProduct.");
                     continue;
                 }
 
                 if (!statusKeyMap.TryGetValue(CleanText(order.Status), out var statusKey))
                 {
-                    _logger.LogWarning($"Status '{order.Status}' not found in DimOrderStatus.");
+                    _logger.LogWarning($"Status '{order.Status}' no encontrado en DimOrderStatus.");
                     continue;
                 }
 

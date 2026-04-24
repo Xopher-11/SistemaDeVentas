@@ -44,7 +44,7 @@ namespace SistemaDeVentas.Infrastructure.Extractors
 
             try
             {
-                _logger.LogInfo("Starting CSV extraction...");
+                _logger.LogInfo("Iniciando la extracción de CSV...");
 
                 var customersPath = Path.Combine(_csvSettings.BasePath, _csvSettings.CustomersFileName);
                 var productsPath = Path.Combine(_csvSettings.BasePath, _csvSettings.ProductsFileName);
@@ -57,16 +57,16 @@ namespace SistemaDeVentas.Infrastructure.Extractors
                 _logger.LogInfo($"OrderDetails path: {orderDetailsPath}");
 
                 if (!File.Exists(customersPath))
-                    throw new FileNotFoundException("Customers CSV not found.", customersPath);
+                    throw new FileNotFoundException("No se encontró el archivo Customers CSV.", customersPath);
 
                 if (!File.Exists(productsPath))
-                    throw new FileNotFoundException("Products CSV not found.", productsPath);
+                    throw new FileNotFoundException("No se encontró el archivo Products CSV.", productsPath);
 
                 if (!File.Exists(ordersPath))
-                    throw new FileNotFoundException("Orders CSV not found.", ordersPath);
+                    throw new FileNotFoundException("No se encontró el archivo Orders CSV.", ordersPath);
 
                 if (!File.Exists(orderDetailsPath))
-                    throw new FileNotFoundException("OrderDetails CSV not found.", orderDetailsPath);
+                    throw new FileNotFoundException("No se encontró el archivo OrderDetails CSV.", orderDetailsPath);
 
                 var customers = await _customerReader.ReadFileAsync(customersPath, cancellationToken);
                 var products = await _productReader.ReadFileAsync(productsPath, cancellationToken);
@@ -97,7 +97,7 @@ namespace SistemaDeVentas.Infrastructure.Extractors
                     "csv_extraction.json",
                     cancellationToken);
 
-                _logger.LogInfo($"CSV staging file created: {staging.FilePath}");
+                _logger.LogInfo($"Fue creado el archivo CSV staging {staging.FilePath}");
 
                 timer.Stop();
 
@@ -108,7 +108,7 @@ namespace SistemaDeVentas.Infrastructure.Extractors
                     SourceName = DataSourceName,
                     WasSuccessful = true,
                     RecordsExtracted = totalRecords,
-                    Message = "CSV extraction completed successfully.",
+                    Message = "La extracción del archivo CSV se completó con éxito.",
                     StagingFilePath = staging.FilePath,
                     StartedAt = startTime,
                     EndedAt = DateTime.Now,
@@ -118,7 +118,7 @@ namespace SistemaDeVentas.Infrastructure.Extractors
             catch (Exception ex)
             {
                 timer.Stop();
-                _logger.LogFailure("CSV extraction failed.", ex);
+                _logger.LogFailure("La extracción del archivo CSV falló.", ex);
 
                 return new SourceExtractionInfo
                 {

@@ -11,7 +11,7 @@ namespace SistemaDeVentas.Infrastructure.Readers
         {
             if (!File.Exists(path))
             {
-                throw new FileNotFoundException($"File not found at path: {path}");
+                throw new FileNotFoundException($"Archivo no encontrado en la ruta: {path}");
             }
 
             var dataList = new List<T>();
